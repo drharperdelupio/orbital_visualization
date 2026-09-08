@@ -99,8 +99,14 @@ function doPost(e) {
       passed,
       attemptId,
       durationSeconds,
-      formatDuration_(durationSeconds)
+      durationSeconds / 86400
     ]);
+
+    // Store the readable duration as a true spreadsheet duration,
+    // not a text value that Sheets may interpret as a clock time.
+    const writtenRow = sheet.getLastRow();
+    sheet.getRange(writtenRow, DURATION_DISPLAY_COLUMN)
+      .setNumberFormat("[h]:mm:ss");
 
     return jsonResponse({success: true, duplicate: false});
 
@@ -119,15 +125,6 @@ function doGet() {
   });
 }
 
-function formatDuration_(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  return (hours > 0 ? String(hours).padStart(2, "0") + ":" : "") +
-    String(minutes).padStart(2, "0") + ":" +
-    String(secs).padStart(2, "0");
-}
 
 function jsonResponse(obj) {
   return ContentService

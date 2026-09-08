@@ -562,30 +562,6 @@ footer{color:var(--muted);font-size:.86rem;text-align:center;margin:28px 0}
   </section>
 </div>
 
-<section id="resultsCard" class="card hidden">
-  <h2>Results</h2>
-  <p id="resultText"></p>
-  <div class="btnrow screen-only">
-    <button class="secondary" id="reviewBtn">Return to Tutorial</button>
-  </div>
-</section>
-
-<section id="certificateSection" class="hidden">
-  <div class="certificate" id="certificate">
-    <div class="cert-title">Certificate of Completion</div>
-    <p>This certifies that</p>
-    <div class="student" id="certName">Student Name</div>
-    <p>successfully completed the interactive tutorial</p>
-    <h2 style="font-family:Georgia,'Times New Roman',serif">Exploring Atomic Orbitals: s, p, and d</h2>
-    <p class="score" id="certScore">Score: 13/16 (81.25%)</p>
-    <p id="certDate"></p>
-  </div>
-  <div class="btnrow screen-only" style="justify-content:center">
-    <button class="primary" id="pdfBtn">Download / Save Certificate as PDF</button>
-  </div>
-  <p class="small screen-only" style="text-align:center">The button opens your browser's print dialog with only the certificate visible. Choose <strong>Save as PDF</strong> as the printer/destination.</p>
-</section>
-
 <footer class="screen-only">
   Orbital drawings are simplified instructional schematics and are not intended as exact probability-density renderings.
 </footer>
@@ -621,12 +597,18 @@ if(!Number.isFinite(attemptStartMs) || attemptStartMs <= 0){
 let resultsSubmitted = sessionStorage.getItem("orbitalTutorialSubmitted:"+attemptId) === "yes";
 
 function getCompletionDurationSeconds(){
-  let stored = Number(sessionStorage.getItem(COMPLETION_STORAGE_KEY));
-  if(Number.isInteger(stored) && stored >= 0) return stored;
+  const rawStored = sessionStorage.getItem(COMPLETION_STORAGE_KEY);
 
-  stored = Math.max(0, Math.round((Date.now() - attemptStartMs) / 1000));
-  sessionStorage.setItem(COMPLETION_STORAGE_KEY, String(stored));
-  return stored;
+  if(rawStored !== null){
+    const stored = Number(rawStored);
+    if(Number.isInteger(stored) && stored >= 0){
+      return stored;
+    }
+  }
+
+  const elapsed = Math.max(0, Math.round((Date.now() - attemptStartMs) / 1000));
+  sessionStorage.setItem(COMPLETION_STORAGE_KEY, String(elapsed));
+  return elapsed;
 }
 
 function formatDuration(seconds){
@@ -869,45 +851,31 @@ document.getElementById("checkMatchBtn").addEventListener("click", ()=>{
 document.getElementById("finishBtn").addEventListener("click",async ()=>{
  const {score,answered}=scoreNow();
  const fb=document.getElementById("finishFeedback");
+
  if(answered<TOTAL){
    fb.className="feedback bad";
    fb.textContent="Answer all "+TOTAL+" scored questions before finishing. You have answered "+answered+".";
    return;
  }
+
+ const durationSeconds=getCompletionDurationSeconds();
+ const pct=Math.round(score/TOTAL*100);
+ const passed=score>=PASS_SCORE;
+
  fb.className="feedback";
  fb.textContent="Saving your result…";
 
- const pct=Math.round(score/TOTAL*100);
- document.getElementById("resultsCard").classList.remove("hidden");
- const durationSeconds=getCompletionDurationSeconds();
- document.getElementById("resultText").innerHTML="<strong>"+score+"/"+TOTAL+" correct ("+pct+"%).</strong> "+
-   (score>=PASS_SCORE?"You met the 80% certificate requirement.":"You need at least "+PASS_SCORE+"/"+TOTAL+" correct to receive the certificate.")+
-   " Attempt time: <strong>"+formatDuration(durationSeconds)+"</strong>.";
-
- if(score>=PASS_SCORE){
-   const name=storedStudentName;
-   document.getElementById("certName").textContent=name;
-   document.getElementById("certScore").textContent="Score: "+score+"/"+TOTAL+" ("+pct+"%)";
-   document.getElementById("certDate").textContent="Completed "+new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
-   document.getElementById("certificateSection").classList.remove("hidden");
- }else{
-   document.getElementById("certificateSection").classList.add("hidden");
- }
-
  const saved = await submitResultsOnce(score);
- if(saved){
-   fb.className="feedback good";
-   fb.textContent="Your result has been submitted.";
- }else{
-   fb.className="feedback bad";
-   fb.textContent="Your score is complete, but the result could not be submitted automatically. Please tell your instructor before leaving this page.";
- }
- document.getElementById("resultsCard").scrollIntoView({behavior:"smooth"});
+
+ sessionStorage.setItem("orbitalTutorialFinalScore", String(score));
+ sessionStorage.setItem("orbitalTutorialFinalTotal", String(TOTAL));
+ sessionStorage.setItem("orbitalTutorialFinalPercent", String(pct));
+ sessionStorage.setItem("orbitalTutorialFinalPassed", passed ? "yes" : "no");
+ sessionStorage.setItem("orbitalTutorialFinalDuration", String(durationSeconds));
+ sessionStorage.setItem("orbitalTutorialSubmissionSaved", saved ? "yes" : "no");
+
+ window.location.href="results.html";
 });
-document.getElementById("reviewBtn").addEventListener("click",()=>{
- document.getElementById("tutorial").scrollIntoView({behavior:"smooth"});
-});
-document.getElementById("pdfBtn").addEventListener("click",()=>{
   const certificate = document.getElementById("certificate");
   const printWindow = window.open("", "_blank", "width=900,height=700");
   if(!printWindow){
