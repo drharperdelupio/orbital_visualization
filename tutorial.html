@@ -592,7 +592,7 @@ footer{color:var(--muted);font-size:.86rem;text-align:center;margin:28px 0}
 </div>
 
 <script>
-const RESULTS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_6IHJg21q35dQM81Gbqxscn0jxJwwXuSoIWDlUyOmO97mr7KyNlsrF3h3kP93ToJl/exec";
+const RESULTS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx-9zuPeaukj-zOCYG0cq6_YL6dEshSdmL6trO5G9fyM_xTqUd-hOxPCo38UAfTFDoz/exec";
 const RESULTS_SUBMISSION_TOKEN = "_aKZJwDX3k2GfFrAJd7EqxL3PZZ0lje_WNK-aTBZiEk";
 const RESULTS_TUTORIAL_ID = "ORBITAL_SHAPES_V1";
 const storedStudentName = (sessionStorage.getItem("orbitalTutorialStudentName") || "").trim();
@@ -601,6 +601,9 @@ if(!storedStudentName){
 }
 
 const ATTEMPT_STORAGE_KEY = "orbitalTutorialAttemptId";
+const START_STORAGE_KEY = "orbitalTutorialStartMs";
+const COMPLETION_STORAGE_KEY = "orbitalTutorialCompletionSeconds";
+
 let attemptId = sessionStorage.getItem(ATTEMPT_STORAGE_KEY);
 if(!attemptId){
   attemptId = (window.crypto && crypto.randomUUID)
@@ -608,7 +611,32 @@ if(!attemptId){
     : "attempt-"+Date.now()+"-"+Math.random().toString(36).slice(2);
   sessionStorage.setItem(ATTEMPT_STORAGE_KEY, attemptId);
 }
+
+let attemptStartMs = Number(sessionStorage.getItem(START_STORAGE_KEY));
+if(!Number.isFinite(attemptStartMs) || attemptStartMs <= 0){
+  attemptStartMs = Date.now();
+  sessionStorage.setItem(START_STORAGE_KEY, String(attemptStartMs));
+}
+
 let resultsSubmitted = sessionStorage.getItem("orbitalTutorialSubmitted:"+attemptId) === "yes";
+
+function getCompletionDurationSeconds(){
+  let stored = Number(sessionStorage.getItem(COMPLETION_STORAGE_KEY));
+  if(Number.isInteger(stored) && stored >= 0) return stored;
+
+  stored = Math.max(0, Math.round((Date.now() - attemptStartMs) / 1000));
+  sessionStorage.setItem(COMPLETION_STORAGE_KEY, String(stored));
+  return stored;
+}
+
+function formatDuration(seconds){
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return (h ? String(h).padStart(2,"0")+":" : "") +
+         String(m).padStart(2,"0")+":" +
+         String(s).padStart(2,"0");
+}
 
 async function submitResultsOnce(score){
   if(resultsSubmitted) return true;
@@ -623,6 +651,7 @@ async function submitResultsOnce(score){
     studentName: storedStudentName,
     score: score,
     total: TOTAL,
+    durationSeconds: getCompletionDurationSeconds(),
     attemptId: attemptId
   };
 
@@ -675,6 +704,8 @@ document.getElementById("activeStudentName").textContent = storedStudentName;
 document.getElementById("restartTutorialBtn").addEventListener("click", ()=>{
   sessionStorage.removeItem("orbitalTutorialStudentName");
   sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+  sessionStorage.removeItem(START_STORAGE_KEY);
+  sessionStorage.removeItem(COMPLETION_STORAGE_KEY);
   window.location.href = "index.html";
 });
 
@@ -848,7 +879,10 @@ document.getElementById("finishBtn").addEventListener("click",async ()=>{
 
  const pct=Math.round(score/TOTAL*100);
  document.getElementById("resultsCard").classList.remove("hidden");
- document.getElementById("resultText").innerHTML="<strong>"+score+"/"+TOTAL+" correct ("+pct+"%).</strong> "+(score>=PASS_SCORE?"You met the 80% certificate requirement.":"You need at least "+PASS_SCORE+"/"+TOTAL+" correct to receive the certificate.");
+ const durationSeconds=getCompletionDurationSeconds();
+ document.getElementById("resultText").innerHTML="<strong>"+score+"/"+TOTAL+" correct ("+pct+"%).</strong> "+
+   (score>=PASS_SCORE?"You met the 80% certificate requirement.":"You need at least "+PASS_SCORE+"/"+TOTAL+" correct to receive the certificate.")+
+   " Attempt time: <strong>"+formatDuration(durationSeconds)+"</strong>.";
 
  if(score>=PASS_SCORE){
    const name=storedStudentName;
@@ -873,7 +907,49 @@ document.getElementById("finishBtn").addEventListener("click",async ()=>{
 document.getElementById("reviewBtn").addEventListener("click",()=>{
  document.getElementById("tutorial").scrollIntoView({behavior:"smooth"});
 });
-document.getElementById("pdfBtn").addEventListener("click",()=>window.print());
+document.getElementById("pdfBtn").addEventListener("click",()=>{
+  const certificate = document.getElementById("certificate");
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if(!printWindow){
+    alert("Your browser blocked the certificate print window. Allow pop-ups for this site and try again.");
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Orbital Tutorial Certificate</title>
+<style>
+  @page { size: landscape; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; background:#fff; font-family:Arial,Helvetica,sans-serif; color:#1f2933; }
+  body { display:flex; justify-content:center; align-items:flex-start; }
+  .certificate {
+    width:100%;
+    max-width:10in;
+    min-height:6.8in;
+    border:8px double #2f5d8a;
+    padding:0.65in;
+    text-align:center;
+    background:#fff;
+    box-shadow:none;
+    margin:0;
+  }
+  .cert-title { font-family:Georgia,"Times New Roman",serif; font-size:32pt; font-weight:700; color:#21476d; margin-bottom:22px; }
+  .student { font-family:Georgia,"Times New Roman",serif; font-size:26pt; font-weight:700; margin:18px 0; }
+  h2 { font-family:Georgia,"Times New Roman",serif; font-size:22pt; color:#21476d; }
+  p { font-size:14pt; margin:14px 0; }
+  .score { font-size:18pt; font-weight:700; }
+</style>
+</head>
+<body>${certificate.outerHTML}</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(()=>{ printWindow.print(); }, 250);
+});
 </script>
 </body>
 </html>

@@ -178,6 +178,16 @@ footer{color:var(--muted);font-size:.86rem;text-align:center;margin:28px 0}
       return;
     }
     sessionStorage.setItem("orbitalTutorialStudentName", name);
+
+    const attemptId = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : "attempt-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+
+    sessionStorage.setItem("orbitalTutorialAttemptId", attemptId);
+    sessionStorage.setItem("orbitalTutorialStartMs", String(Date.now()));
+    sessionStorage.removeItem("orbitalTutorialCompletionSeconds");
+    sessionStorage.removeItem("orbitalTutorialSubmitted:"+attemptId);
+
     window.location.href = "tutorial.html";
   }
 

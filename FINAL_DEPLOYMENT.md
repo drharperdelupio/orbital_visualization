@@ -1,13 +1,9 @@
-# Final Deployment
+# Final Deployment v3
 
-This package already has the deployed Google Apps Script web-app URL inserted into `tutorial.html`.
+This package uses the updated Google Apps Script endpoint:
 
-Upload at minimum:
-- `index.html`
-- `tutorial.html`
+https://script.google.com/macros/s/AKfycbx-9zuPeaukj-zOCYG0cq6_YL6dEshSdmL6trO5G9fyM_xTqUd-hOxPCo38UAfTFDoz/exec
 
-to the same GitHub Pages folder/root.
+Upload `index.html` and `tutorial.html` to the same GitHub Pages folder/root.
 
-`Code.gs`, `SETUP.md`, and `README.md` are included for your records.
-
-After GitHub Pages deploys, run one test attempt and confirm that a new row appears in the Google Sheet.
+`Code.gs` and deployment notes are included for your records.
