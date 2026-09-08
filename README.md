@@ -1,13 +1,20 @@
 # Exploring Atomic Orbitals
 
-Interactive tutorial for s, p, and d orbital shapes and orientations.
+GitHub Pages package for the interactive orbital tutorial.
 
-## GitHub Pages deployment
+## Files
 
-1. Upload `index.html` to the root of the repository.
+- `index.html` — name-entry/start page only
+- `tutorial.html` — instructional content, questions, scoring, drag-and-drop activity, and certificate
+
+The quiz markup does not exist on `index.html`, so students cannot see the questions before entering their name.
+
+## Deploy with GitHub Pages
+
+1. Upload both HTML files to the root of your repository.
 2. Open **Settings → Pages**.
 3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Select the branch containing `index.html` (usually `main`) and `/ (root)`.
+4. Select the branch containing the files (usually `main`) and `/ (root)`.
 5. Save.
 
-The tutorial is self-contained. Students see only the name/start screen initially. The instructional content and quiz questions are explicitly hidden until a nonblank name is entered and **Start Tutorial** is selected.
+Students should enter through the repository's GitHub Pages root URL, which loads `index.html`.
