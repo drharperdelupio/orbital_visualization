@@ -876,48 +876,6 @@ document.getElementById("finishBtn").addEventListener("click",async ()=>{
 
  window.location.href="results.html";
 });
-  const certificate = document.getElementById("certificate");
-  const printWindow = window.open("", "_blank", "width=900,height=700");
-  if(!printWindow){
-    alert("Your browser blocked the certificate print window. Allow pop-ups for this site and try again.");
-    return;
-  }
-
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Orbital Tutorial Certificate</title>
-<style>
-  @page { size: landscape; margin: 0.5in; }
-  * { box-sizing: border-box; }
-  html,body { margin:0; padding:0; background:#fff; font-family:Arial,Helvetica,sans-serif; color:#1f2933; }
-  body { display:flex; justify-content:center; align-items:flex-start; }
-  .certificate {
-    width:100%;
-    max-width:10in;
-    min-height:6.8in;
-    border:8px double #2f5d8a;
-    padding:0.65in;
-    text-align:center;
-    background:#fff;
-    box-shadow:none;
-    margin:0;
-  }
-  .cert-title { font-family:Georgia,"Times New Roman",serif; font-size:32pt; font-weight:700; color:#21476d; margin-bottom:22px; }
-  .student { font-family:Georgia,"Times New Roman",serif; font-size:26pt; font-weight:700; margin:18px 0; }
-  h2 { font-family:Georgia,"Times New Roman",serif; font-size:22pt; color:#21476d; }
-  p { font-size:14pt; margin:14px 0; }
-  .score { font-size:18pt; font-weight:700; }
-</style>
-</head>
-<body>${certificate.outerHTML}</body>
-</html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(()=>{ printWindow.print(); }, 250);
-});
 </script>
 </body>
 </html>
