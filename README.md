@@ -1,20 +1,19 @@
-# Exploring Atomic Orbitals
-
-GitHub Pages package for the interactive orbital tutorial.
+# Exploring Atomic Orbitals — Google Sheets Results Edition
 
 ## Files
 
-- `index.html` — name-entry/start page only
-- `tutorial.html` — instructional content, questions, scoring, drag-and-drop activity, and certificate
+- `index.html` — name entry page
+- `tutorial.html` — tutorial, 16 scored questions, drag-and-drop, certificate, and score submission
+- `Code.gs` — Google Apps Script endpoint
+- `SETUP.md` — deployment steps
 
-The quiz markup does not exist on `index.html`, so students cannot see the questions before entering their name.
+## Sheet columns
 
-## Deploy with GitHub Pages
+Existing columns A:G:
+`Timestamp | Tutorial | Student Name | Score | Total | Percent | Passed`
 
-1. Upload both HTML files to the root of your repository.
-2. Open **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Select the branch containing the files (usually `main`) and `/ (root)`.
-5. Save.
+The script automatically uses column H as `Submission ID` for duplicate-attempt protection.
 
-Students should enter through the repository's GitHub Pages root URL, which loads `index.html`.
+## Important
+
+The assignment token is embedded in the public tutorial and therefore is not a true secret. It is useful for rejecting unrelated/accidental submissions, while server-side validation prevents altered totals, impossible scores, and client-supplied percentage/pass values from being trusted.

@@ -592,9 +592,56 @@ footer{color:var(--muted);font-size:.86rem;text-align:center;margin:28px 0}
 </div>
 
 <script>
+const RESULTS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_6IHJg21q35dQM81Gbqxscn0jxJwwXuSoIWDlUyOmO97mr7KyNlsrF3h3kP93ToJl/exec";
+const RESULTS_SUBMISSION_TOKEN = "_aKZJwDX3k2GfFrAJd7EqxL3PZZ0lje_WNK-aTBZiEk";
+const RESULTS_TUTORIAL_ID = "ORBITAL_SHAPES_V1";
 const storedStudentName = (sessionStorage.getItem("orbitalTutorialStudentName") || "").trim();
 if(!storedStudentName){
   window.location.replace("index.html");
+}
+
+const ATTEMPT_STORAGE_KEY = "orbitalTutorialAttemptId";
+let attemptId = sessionStorage.getItem(ATTEMPT_STORAGE_KEY);
+if(!attemptId){
+  attemptId = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "attempt-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+  sessionStorage.setItem(ATTEMPT_STORAGE_KEY, attemptId);
+}
+let resultsSubmitted = sessionStorage.getItem("orbitalTutorialSubmitted:"+attemptId) === "yes";
+
+async function submitResultsOnce(score){
+  if(resultsSubmitted) return true;
+  if(!RESULTS_WEB_APP_URL || RESULTS_WEB_APP_URL.includes("PASTE_YOUR_")){
+    console.warn("Results endpoint has not been configured.");
+    return false;
+  }
+
+  const payload = {
+    token: RESULTS_SUBMISSION_TOKEN,
+    tutorial: RESULTS_TUTORIAL_ID,
+    studentName: storedStudentName,
+    score: score,
+    total: TOTAL,
+    attemptId: attemptId
+  };
+
+  try{
+    // no-cors is used because Apps Script web apps do not provide conventional CORS headers.
+    // The server independently validates every submitted field.
+    await fetch(RESULTS_WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify(payload)
+    });
+    resultsSubmitted = true;
+    sessionStorage.setItem("orbitalTutorialSubmitted:"+attemptId, "yes");
+    return true;
+  }catch(err){
+    console.error("Result submission failed:", err);
+    return false;
+  }
 }
 
 const PASS_SCORE = 13;
@@ -627,6 +674,7 @@ let locked = {};
 document.getElementById("activeStudentName").textContent = storedStudentName;
 document.getElementById("restartTutorialBtn").addEventListener("click", ()=>{
   sessionStorage.removeItem("orbitalTutorialStudentName");
+  sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
   window.location.href = "index.html";
 });
 
@@ -787,7 +835,7 @@ document.getElementById("checkMatchBtn").addEventListener("click", ()=>{
   updateProgress();
 });
 
-document.getElementById("finishBtn").addEventListener("click",()=>{
+document.getElementById("finishBtn").addEventListener("click",async ()=>{
  const {score,answered}=scoreNow();
  const fb=document.getElementById("finishFeedback");
  if(answered<TOTAL){
@@ -795,10 +843,13 @@ document.getElementById("finishBtn").addEventListener("click",()=>{
    fb.textContent="Answer all "+TOTAL+" scored questions before finishing. You have answered "+answered+".";
    return;
  }
- fb.textContent="";
+ fb.className="feedback";
+ fb.textContent="Saving your result…";
+
  const pct=Math.round(score/TOTAL*100);
  document.getElementById("resultsCard").classList.remove("hidden");
  document.getElementById("resultText").innerHTML="<strong>"+score+"/"+TOTAL+" correct ("+pct+"%).</strong> "+(score>=PASS_SCORE?"You met the 80% certificate requirement.":"You need at least "+PASS_SCORE+"/"+TOTAL+" correct to receive the certificate.");
+
  if(score>=PASS_SCORE){
    const name=storedStudentName;
    document.getElementById("certName").textContent=name;
@@ -807,6 +858,15 @@ document.getElementById("finishBtn").addEventListener("click",()=>{
    document.getElementById("certificateSection").classList.remove("hidden");
  }else{
    document.getElementById("certificateSection").classList.add("hidden");
+ }
+
+ const saved = await submitResultsOnce(score);
+ if(saved){
+   fb.className="feedback good";
+   fb.textContent="Your result has been submitted.";
+ }else{
+   fb.className="feedback bad";
+   fb.textContent="Your score is complete, but the result could not be submitted automatically. Please tell your instructor before leaving this page.";
  }
  document.getElementById("resultsCard").scrollIntoView({behavior:"smooth"});
 });
